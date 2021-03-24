@@ -1,12 +1,10 @@
 package ru.geekbrains.march.chat.client;
 
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 
 import java.io.DataInputStream;
@@ -16,16 +14,22 @@ import java.net.Socket;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-
 public class Controller implements Initializable {
     @FXML
-    TextField msgField, usernameField;
+    TextField msgField, loginField;
+
+    @FXML
+    PasswordField passwordField;
+
 
     @FXML
     TextArea msgArea;
 
     @FXML
     HBox loginPanel, msgPanel;
+
+    @FXML
+    ListView<String> clientsList;
 
     private Socket socket;
     private DataInputStream in;
@@ -34,32 +38,35 @@ public class Controller implements Initializable {
 
     public void setUsername(String username) {
         this.username = username;
-        if (username != null) {
-            loginPanel.setVisible(false);
-            loginPanel.setManaged(false);
-            msgPanel.setVisible(true);
-            msgPanel.setManaged(true);
-        } else {
-            loginPanel.setVisible(true);
-            loginPanel.setManaged(true);
-            msgPanel.setVisible(false);
-            msgPanel.setManaged(false);
-        }
+        boolean usernameIsNull = username == null;
+
+        loginPanel.setVisible(usernameIsNull);
+        loginPanel.setManaged(usernameIsNull);
+        msgPanel.setVisible(!usernameIsNull);
+        msgPanel.setManaged(!usernameIsNull);
+        clientsList.setVisible(!usernameIsNull);
+        clientsList.setManaged(!usernameIsNull);
     }
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
+        setUsername(null);
     }
 
     public void login() {
+        if (loginField.getText().isEmpty()) {
+            showErrorAler("Nickname cannot be empty ");
+            return;
+        }
+
         if (socket == null || socket.isClosed()) {
             connect();
         }
 
 
         try {
-            out.writeUTF("/login " + usernameField.getText());
+            out.writeUTF("/login " + loginField.getText() + " " + passwordField.getText());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -74,13 +81,32 @@ public class Controller implements Initializable {
                 try {
                     while (true) {
                         String msg = in.readUTF();
+                        if (msg.startsWith("/login_ok ")) {
+                            setUsername(msg.split("\\s")[1]);
+                            break;
+                        }
+                        if (msg.startsWith("/login_failed ")) {
+                            String reason = msg.split("\\s", 2)[1];
+                            msgArea.appendText(reason + "\n");
+                        }
+                    }
+                    while (true) {
+                        String msg = in.readUTF();
                         if (msg.startsWith("/")) {
-                            if (msg.startsWith("/login_ok ")) {
-                                setUsername(msg.split("\\s")[1]);
+                            if (msg.startsWith("/clients_list ")) {
+                                String[] tokens = msg.split("\\s");
+
+                                Platform.runLater(() -> {
+                                    /*System.out.println(Thread.currentThread().getName());*/
+                                    clientsList.getItems().clear();
+                                    for (int i = 1; i < tokens.length; i++) {
+                                        clientsList.getItems().add(tokens[i]);
+                                    }
+                                });
                             }
+
                             continue;
                         }
-
                         msgArea.appendText(msg + "\n");
                     }
                 } catch (IOException e) {
@@ -91,7 +117,7 @@ public class Controller implements Initializable {
             });
             t.start();
         } catch (IOException e) {
-            throw new RuntimeException("Unable to connect to server [ localhost:8189 ]");
+            showErrorAler("Connection not possible, try again");
         }
     }
 
@@ -102,8 +128,8 @@ public class Controller implements Initializable {
             msgField.clear();
             msgField.requestFocus();
         } catch (IOException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Couldn't send message", ButtonType.OK);
-            alert.showAndWait();
+            showErrorAler("Couldn't send message");
+
         }
 
     }
@@ -117,6 +143,15 @@ public class Controller implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+    private  void showErrorAler (String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setContentText(message);
+        alert.setTitle("Chat FX");
+        alert.setHeaderText(null);
+        alert.showAndWait();
     }
 
 

@@ -8,20 +8,27 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.TextField?>
-<VBox fx:controller="ru.geekbrains.march.chat.client.Controller"
-      xmlns:fx="http://javafx.com/fxml" alignment="center">
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.PasswordField?>
+<VBox fx:controller="ru.geekbrains.march.chat.client.Controller" xmlns:fx="http://javafx.com/fxml" alignment="center">
 
 
 
-    <HBox id = "loginPanel">
-        <TextField fx:id="usernameField" HBox.hgrow="ALWAYS" promptText="Type your nickname"/>
+    <HBox fx:id = "loginPanel">
+        <TextField fx:id="loginField" HBox.hgrow="ALWAYS" promptText="Type your login"/>
+        <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS" promptText="Type your password"/>
         <Button text="Enter" onAction="#login"/>
     </HBox>
 
-    <TextArea fx:id="msgArea" VBox.vgrow="ALWAYS" editable="false"/>
+    <HBox VBox.vgrow="ALWAYS">
+        <TextArea fx:id="msgArea" HBox.hgrow="ALWAYS" editable="false" wrapText="true"/>
+        <ListView fx:id="clientsList" prefWidth="150" maxWidth="150" minWidth="150"/>
+    </HBox>
 
 
-    <HBox id = "msgPanel" visible="false" managed="false">
+
+
+    <HBox fx:id = "msgPanel">
             <TextField fx:id="msgField" HBox.hgrow="ALWAYS" promptText="Type message" onAction="#sendMsg"/>
             <Button text="Send" onAction="#sendMsg"/>
     </HBox>
