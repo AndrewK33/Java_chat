@@ -15,12 +15,12 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
+
     @FXML
     TextField msgField, loginField;
 
     @FXML
     PasswordField passwordField;
-
 
     @FXML
     TextArea msgArea;
@@ -30,6 +30,8 @@ public class Controller implements Initializable {
 
     @FXML
     ListView<String> clientsList;
+
+
 
     private Socket socket;
     private DataInputStream in;

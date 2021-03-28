@@ -9,7 +9,8 @@ import java.util.List;
 public class Server {
     private int port;
     private List<ClientHandler> clients;
-    private  AuthenticationProvider authenticationProvider;
+    private  DataBaseAuthenticationProvider authenticationProvider;
+
 
 
     public AuthenticationProvider getAuthenticationProvider() {
@@ -19,7 +20,8 @@ public class Server {
     public Server (int port) {
         this.port = port;
         this.clients = new ArrayList<>();
-        this.authenticationProvider = new InMemoryAuthenticationProvider();
+        this.authenticationProvider = new DataBaseAuthenticationProvider();
+        this.authenticationProvider.dbConnect();
         try (ServerSocket serverSocket = new ServerSocket (port)) {
             System.out.println("Server started on port 8189");
 
@@ -32,6 +34,8 @@ public class Server {
 
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            authenticationProvider.dbDisconnect();
         }
     }
 
