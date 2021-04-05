@@ -35,7 +35,6 @@ public class ClientHandler {
                         }
                         String login = tokens[1];
                         String password = tokens[2];
-
                         String userNickname = server.getAuthenticationProvider().getNicknameByLoginAndPassword(login, password);
 
                         if (userNickname == null) {

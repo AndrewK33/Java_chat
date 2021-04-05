@@ -7,11 +7,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -37,6 +36,7 @@ public class Controller implements Initializable {
     private DataInputStream in;
     private DataOutputStream out;
     private String username;
+    private String path = new File("MessageHistory.txt").getAbsolutePath();
 
     public void setUsername(String username) {
         this.username = username;
@@ -61,12 +61,9 @@ public class Controller implements Initializable {
             showErrorAler("Nickname cannot be empty ");
             return;
         }
-
         if (socket == null || socket.isClosed()) {
             connect();
         }
-
-
         try {
             out.writeUTF("/login " + loginField.getText() + " " + passwordField.getText());
         } catch (IOException e) {
@@ -85,6 +82,8 @@ public class Controller implements Initializable {
                         String msg = in.readUTF();
                         if (msg.startsWith("/login_ok ")) {
                             setUsername(msg.split("\\s")[1]);
+                            readMessageHistory();
+                            msgArea.appendText("\n");
                             break;
                         }
                         if (msg.startsWith("/login_failed ")) {
@@ -92,6 +91,7 @@ public class Controller implements Initializable {
                             msgArea.appendText(reason + "\n");
                         }
                     }
+
                     while (true) {
                         String msg = in.readUTF();
                         if (msg.startsWith("/")) {
@@ -106,7 +106,6 @@ public class Controller implements Initializable {
                                     }
                                 });
                             }
-
                             continue;
                         }
                         msgArea.appendText(msg + "\n");
@@ -127,14 +126,37 @@ public class Controller implements Initializable {
     public void sendMsg() {
         try {
             out.writeUTF(msgField.getText());
+            writeMessageHistory();
             msgField.clear();
             msgField.requestFocus();
         } catch (IOException e) {
             showErrorAler("Couldn't send message");
-
         }
-
     }
+
+    public void readMessageHistory() {
+        try (InputStreamReader in = new InputStreamReader(new FileInputStream(path))){
+            int x = 0;
+            while ((x = in.read()) !=-1) {
+                msgArea.appendText(String.valueOf((char) x));
+            }
+            msgArea.appendText("\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void writeMessageHistory() {
+        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(path, true))){
+            out.write(msgField.getText().getBytes(StandardCharsets.UTF_8));
+            out.write("\n".getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
     private void disconnect() {
         setUsername(null);
